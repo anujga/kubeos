@@ -1,0 +1,48 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: r6
+spec:
+  pipelineRef:
+    name: cat-branch-readme
+  serviceAccountName: meson-bot
+  workspaces:
+  - name: shared-data
+    # persistentVolumeClaim:
+    #   claimName: shared-data7
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+    
+
+  params:
+  - name: repo-url
+    value: https://github.com/anujga/hello-go.git
+  - name: branch-name
+    value: master
+  - name: imageUrl
+    value: 004245605591.dkr.ecr.ap-south-1.amazonaws.com/prod/hello-go
+  - name: imageTag
+    value: "1.0"
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: shared-data19
+  labels:
+    type: local
+spec:
+  storageClassName: standard
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/shared-data19
+  

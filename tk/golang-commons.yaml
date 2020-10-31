@@ -1,0 +1,28 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: golang-make
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/tags: build-tool
+    tekton.dev/displayName: "golang make"
+spec:
+  description: >-
+    This Task is Golang task to build Go projects.
+  params:
+  - name: args
+    description: arguments to make
+    default: ""
+  - name: version
+    description: golang version to use for builds
+    default: "latest"
+  workspaces:
+  - name: source
+  steps:
+  - name: build
+    image: docker.io/library/golang:$(params.version)
+    script: |
+      cd $(workspaces.source.path)
+      $(params.args)
