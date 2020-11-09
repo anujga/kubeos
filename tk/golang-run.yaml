@@ -18,7 +18,6 @@ spec:
         resources:
           requests:
             storage: 1Gi
-    
   params:
   - name: repo-url
     value: https://github.com/anujga/hello-go.git

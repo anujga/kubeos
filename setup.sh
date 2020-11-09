@@ -34,7 +34,7 @@ kubectl create -f https://operatorhub.io/install/elastic-cloud-eck.yaml
 kubectl apply -f elasticsearch.yaml
 
 #L7
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.35.0/deploy/static/provider/aws/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.41.0/deploy/static/provider/aws/deploy.yaml
 
 #kubeflow
 # kubectl delete -f https://operatorhub.io/install/kubeflow.yaml

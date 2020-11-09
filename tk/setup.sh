@@ -16,6 +16,11 @@ kubectl create secret generic regcred \
 
 kubectl create secret generic aws-secret --from-file=$HOME/.aws/credentials
 
+
+kubectl create secret generic aws-secret \
+  --from-literal=token=$(GITHUB_TOKEN) \
+  --from-literal=secret=random-string-data
+
           
 k apply -f /home/anuj/meson/clusters/tk/tk-sa.yaml
 k apply -f /home/anuj/meson/clusters/tk/kaniko.yaml
@@ -29,4 +34,11 @@ aws ecr list-images --repository-name prod/hello-go
 # k apply -f /home/anuj/meson/infra/tk/tk-configs.yaml
 # tkn task describe echo-hello-world
 
+git clone https://github.com/tektoncd/triggers.git
 
+cd triggers/docs/getting-started
+kubectl create namespace getting-started
+k ns getting-started
+
+kubectl apply -f ./rbac/
+kubectl apply -f /home/anuj/meson/clusters/tk/golang-trigger.yaml

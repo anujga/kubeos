@@ -16,7 +16,7 @@ spec:
     type: string
   - name: imageTag
     type: string
-
+    
   workspaces:
   - name: shared-data
     description: |
@@ -51,7 +51,15 @@ spec:
           cat $(workspaces.source.path)/README.md
 
   - name: go-build
-    runAfter: ["fetch-repo"]
+    runAfter: 
+    - fetch-repo
+
+    conditions:
+      - conditionRef: "go-test"
+        resources:
+          - name: source-repo
+            resource: source-repo
+
     workspaces:
     - name: source
       workspace: shared-data
@@ -76,3 +84,18 @@ spec:
     - name: IMAGE
       value: $(params.imageUrl):$(params.imageTag)
 
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Condition
+metadata:
+  name: go-test
+  namespace: getting-started
+spec:
+  resources:
+    - name: source-repo
+      type: git
+  check:
+    image: golang
+    command: ["go"]
+    workingDir: "$(resources.source-repo.path)"
+    args: ['test', "./..."]
