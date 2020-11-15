@@ -1,0 +1,44 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: helm-push
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/tags: build-tool
+    tekton.dev/displayName: "helm-push"
+spec:
+  description: >-
+    - helm push
+
+  params:
+  - name: chartName
+    description: name of chart. Assummed to be present in charts/chartName
+  - name: url
+    description: url of chart museum server
+    default: http://chartmuseum-chartmuseum.flux.svc.cluster.local:8080
+  - name: versionFile
+    description: path of version file
+    default: VERSION
+
+  workspaces:
+  - name: source
+
+  steps:
+  - image: anujgarg2004/buildhelpers:0.0.2
+    script: |
+      #!/usr/bin/env bash
+      set -x
+
+
+      cd $(workspaces.source.path)
+      versionFile=$(params.versionFile)
+      version=$(cat ${versionFile})
+
+      yq w -i charts/$(params.chartName)/Chart.yaml version ${version}
+      yq w -i charts/$(params.chartName)/Chart.yaml appVersion: ${version}
+
+      helm package --app-version=${version} --version=${version} charts/$(params.chartName)
+      chartName="$(params.chartName)-${version}.tgz"
+      curl --data-binary "@${chartName}" "$(params.url)/api/charts"

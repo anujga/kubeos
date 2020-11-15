@@ -1,0 +1,64 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: test-helm-push
+spec:
+  params:
+  - name: repo-url
+    type: string
+    description: The git repository URL to clone from.
+  - name: branch-name
+    type: string
+    description: The git branch to clone.
+
+  workspaces:
+  - name: shared-data
+
+  tasks:
+  - name: fetch-repo
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: shared-data
+    params:
+    - name: url
+      value: $(params.repo-url)
+    - name: revision
+      value: $(params.branch-name)
+
+  - name: helm-push
+    runAfter:
+    - fetch-repo
+    workspaces:
+    - name: source
+      workspace: shared-data
+    taskRef:
+      name: helm-push
+    params:
+    - name: chartName
+      value: hello-go
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: test-helm-push-01
+spec:
+  pipelineRef:
+    name: test-helm-push
+  serviceAccountName: meson-bot
+  workspaces:
+  - name: shared-data
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+  params:
+  - name: repo-url
+    value: https://github.com/anujga/hello-go.git
+  - name: branch-name
+    value: master

@@ -11,6 +11,10 @@ metadata:
 spec:
   description: >-
     This Task is Golang task to build Go projects.
+    example usage:
+    - make test
+    - go build ./...
+    - go test ./...
   params:
   - name: args
     description: arguments to make

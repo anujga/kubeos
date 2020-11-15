@@ -1,28 +1,37 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: golang-make
+  name: git-create-tag
   labels:
     app.kubernetes.io/version: "0.1"
   annotations:
     tekton.dev/pipelines.minVersion: "0.12.1"
-    tekton.dev/tags: build-tool
-    tekton.dev/displayName: "golang make"
+    tekton.dev/tags: git-tool
+    tekton.dev/displayName: "git tag"
 spec:
   description: >-
-    This Task is Golang task to build Go projects.
+    - bumps up the version using VERSION file
+    - creates a commit to master
+
   params:
-  - name: args
-    description: arguments to make
-    default: ""
-  - name: version
-    description: golang version to use for builds
-    default: "latest"
+  - name: versionFile
+    description: path of version file
+    default: VERSION
   workspaces:
   - name: source
   steps:
-  - name: build
-    image: docker.io/library/golang:$(params.version)
+  - image: docker.io/python:3.9-buster
     script: |
+      #!/usr/bin/env bash
+
       cd $(workspaces.source.path)
-      $(params.args)
+      git config user.name "meson-bot"
+      git config user.email "meson-bot@meson.ai"
+
+      pip install semver
+      $versionFile = $(params.versionFile)
+      pysemver bump patch $(cat $versionFile) > $versionFile
+
+      git checkout -b master
+      git add $versionFile
+      git commit -m "Release version $(cat $versionFile)"

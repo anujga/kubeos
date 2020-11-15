@@ -99,19 +99,32 @@ spec:
     taskRef:
       name: kaniko
     runAfter: [ "go-build" ]
-      workspaces:
-      - name: source
-        workspace: shared-data
-      params:
-      # - name: CONTEXT
-      #   value: ./
-      # - name: DOCKERFILE
-      #   value: Dockerfile
-      - name: IMAGE
-        value: $(params.imageUrl):$(params.imageTag)
+    workspaces:
+    - name: source
+      workspace: shared-data
+    params:
+    # - name: CONTEXT
+    #   value: ./
+    # - name: DOCKERFILE
+    #   value: Dockerfile
+    - name: IMAGE
+      value: $(params.imageUrl):$(params.imageTag)
+
+
+  - name: helm-push
+    runAfter:
+    - docker-build-publish
+    workspaces:
+    - name: source
+      workspace: shared-data
+    taskRef:
+      name: helm-push
+    params:
+    - name: chartName
+      value: hello-go
 
   - name: push-tag
-    runAfter: [ "go-build" ]  # Wait until the clone is done before reading the readme.
+    runAfter: [ "helm-push" ]  # Wait until the clone is done before reading the readme.
     workspaces:
     - name: source
       workspace: shared-data

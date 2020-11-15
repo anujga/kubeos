@@ -1,0 +1,25 @@
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  name: chartmuseum
+  namespace: flux
+  annotations:
+    fluxcd.io/automated: "false"
+    filter.fluxcd.io/chart-image: semver:~3.1
+spec:
+  releaseName: chartmuseum
+  chart:
+    repository: https://openchart.choerodon.com.cn/choerodon/c7n
+    name: chartmuseum
+    version: 2.6.0
+  values:
+    persistence:
+      enabled: true
+    ingress:
+      enabled: true
+      hosts:
+      - name: charts.dev.meson.ai
+    env:
+      open:
+        DISABLE_API: false
+        DISABLE_METRICS: false
