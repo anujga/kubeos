@@ -16,8 +16,19 @@ kubectl create secret generic regcred \
 
 kubectl create secret generic aws-secret --from-file=$HOME/.aws/credentials
 
-
 kubectl create secret generic aws-secret \
+  --from-literal=token=$(GITHUB_TOKEN) \
+  --from-literal=secret=random-string-data
+
+
+kubectl create secret generic git-ssh \
+  --type="kubernetes.io/ssh-auth" \
+  --from-file=ssh-privatekey=$HOME/.ssh/meson2 \
+  --from-file=ssh-publickey=$HOME/.ssh/meson2.pub
+
+kubectl annotate secret git-ssh tekton.dev/git-0=github.com
+
+kubectl create secret ssh-auth  \
   --from-literal=token=$(GITHUB_TOKEN) \
   --from-literal=secret=random-string-data
 

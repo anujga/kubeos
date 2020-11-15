@@ -56,9 +56,10 @@ metadata:
 spec:
   params:
     - name: gitrevision
-      value: $(body.head_commit.id)
+      value: master
+      # value: $(body.head_commit.id)
     - name: gitrepositoryurl
-      value: "https://github.com/$(body.repository.full_name)"
+      value: "git@github.com:$(body.repository.full_name)"
     - name: imageUrl
       value: "prod/hello-go"
 ---
@@ -76,6 +77,7 @@ spec:
       template:
         ref: getting-started-triggertemplate
 
+---
 
 apiVersion: extensions/v1beta1
 kind: Ingress

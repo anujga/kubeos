@@ -5,7 +5,7 @@ metadata:
 secrets:
 - name: aws-secret
 - name: regcred
-
+- name: git-ssh
 ---
 
 apiVersion: v1

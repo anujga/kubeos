@@ -16,7 +16,7 @@ spec:
     type: string
   - name: imageTag
     type: string
-    
+
   workspaces:
   - name: shared-data
     description: |
@@ -37,7 +37,7 @@ spec:
       value: $(params.branch-name)
 
   - name: cat-readme
-    runAfter: ["fetch-repo"]  # Wait until the clone is done before reading the readme.
+    runAfter: [ "fetch-repo" ]  # Wait until the clone is done before reading the readme.
     workspaces:
     - name: source
       workspace: shared-data
@@ -50,15 +50,41 @@ spec:
           #!/usr/bin/env zsh
           cat $(workspaces.source.path)/README.md
 
-  - name: go-build
-    runAfter: 
-    - fetch-repo
 
-    conditions:
-      - conditionRef: "go-test"
-        resources:
-          - name: source-repo
-            resource: source-repo
+  - name: create-tag
+    runAfter: [ "fetch-repo" ]  # Wait until the clone is done before reading the readme.
+    workspaces:
+    - name: source
+      workspace: shared-data
+    taskSpec:
+      workspaces:
+      - name: source
+      steps:
+      - image: docker.io/python:3.9-buster
+        script: |
+          #!/usr/bin/env bash
+
+          cd $(workspaces.source.path)
+          git config user.name "meson-bot"
+          git config user.email "meson-bot@meson.ai"
+
+          pip install semver
+
+          pysemver bump patch $(cat VERSION) > VERSION
+
+          git checkout -b master
+          git add VERSION
+          git commit -m "Release version $(cat VERSION)"
+
+  - name: go-build
+    runAfter:
+    - create-tag
+
+    # conditions:
+    #   - conditionRef: "go-test"
+    #     resources:
+    #       - name: source-repo
+    #         resource: source-repo
 
     workspaces:
     - name: source
@@ -68,21 +94,46 @@ spec:
     params:
     - name: args
       value: make
-                
+
   - name: docker-build-publish
     taskRef:
       name: kaniko
-    runAfter: ["go-build"]
+    runAfter: [ "go-build" ]
+      workspaces:
+      - name: source
+        workspace: shared-data
+      params:
+      # - name: CONTEXT
+      #   value: ./
+      # - name: DOCKERFILE
+      #   value: Dockerfile
+      - name: IMAGE
+        value: $(params.imageUrl):$(params.imageTag)
+
+  - name: push-tag
+    runAfter: [ "go-build" ]  # Wait until the clone is done before reading the readme.
     workspaces:
     - name: source
       workspace: shared-data
-    params:
-    # - name: CONTEXT
-    #   value: ./
-    # - name: DOCKERFILE
-    #   value: Dockerfile
-    - name: IMAGE
-      value: $(params.imageUrl):$(params.imageTag)
+    taskSpec:
+      workspaces:
+      - name: source
+      steps:
+      - image: docker.io/python:3.9-buster
+        script: |
+          #!/usr/bin/env bash
+
+          set -x
+          cd $(workspaces.source.path)
+          # git config user.name "meson-bot"
+          # git config user.email "meson-bot@meson.ai"
+          ssh-keyscan -H github.com >> $HOME/.ssh/known_hosts
+          ls $HOME/.ssh/
+          echo "Pushing detached tag of new version"
+
+          git tag  -a "v$(cat VERSION)" -m "Release version $(cat VERSION) tag"
+          GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i $HOME/.ssh/id_git-ssh " git push origin master --follow-tags
+          echo "done"
 
 ---
 apiVersion: tekton.dev/v1alpha1
@@ -92,10 +143,10 @@ metadata:
   namespace: getting-started
 spec:
   resources:
-    - name: source-repo
-      type: git
+  - name: source-repo
+    type: git
   check:
     image: golang
-    command: ["go"]
+    command: [ "go" ]
     workingDir: "$(resources.source-repo.path)"
-    args: ['test', "./..."]
+    args: [ 'test', "./..." ]
