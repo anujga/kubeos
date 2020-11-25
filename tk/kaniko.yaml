@@ -48,10 +48,12 @@ spec:
     env:
     - name: DOCKER_CONFIG
       value: /tekton/home/.docker
+    # todo: acr support
     volumeMounts:
-      # when not using instance role
-      - name: aws-secret
-        mountPath: /tekton/home/.aws/
+    # when not using instance role
+    - name: aws-secret
+      mountPath: /tekton/home/.aws/
+
     command:
     - /kaniko/executor
     - $(params.EXTRA_ARGS)

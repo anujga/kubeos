@@ -2,15 +2,13 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: r6
+  name: test-go-pipeline
 spec:
   pipelineRef:
     name: golang-release-ecr
   serviceAccountName: meson-bot
   workspaces:
   - name: shared-data
-    # persistentVolumeClaim:
-    #   claimName: shared-data7
     volumeClaimTemplate:
       spec:
         accessModes:
@@ -19,14 +17,16 @@ spec:
           requests:
             storage: 1Gi
   params:
-  - name: repo-url
-    value: https://github.com/anujga/hello-go.git
   - name: branch-name
     value: master
-  - name: imageUrl
-    value: 004245605591.dkr.ecr.ap-south-1.amazonaws.com/prod/hello-go
-  - name: imageTag
-    value: "1.1"
+  - name: dockerRepoUrl
+    value: "004245605591.dkr.ecr.ap-south-1.amazonaws.com"
+  - name: repo-url
+    value: git@github.com:anujga/hello-go.git
+  - name: env
+    value: prod
+  - name: appName
+    value: hello-go
 
 # ---
 # apiVersion: v1

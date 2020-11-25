@@ -10,7 +10,8 @@ spec:
   - name: branch-name
     type: string
     description: The git branch to clone.
-
+  - name: version
+    type: string
   workspaces:
   - name: shared-data
 
@@ -38,6 +39,8 @@ spec:
     params:
     - name: chartName
       value: hello-go
+    - name: version
+      value: $(params.version)
 
 ---
 apiVersion: tekton.dev/v1beta1
@@ -62,3 +65,5 @@ spec:
     value: https://github.com/anujga/hello-go.git
   - name: branch-name
     value: master
+  - name: version
+    value: "0.2.1"

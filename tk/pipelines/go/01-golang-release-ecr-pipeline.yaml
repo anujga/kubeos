@@ -12,9 +12,12 @@ spec:
   - name: branch-name
     type: string
     description: The git branch to clone.
-  - name: imageUrl
+
+  - name: dockerRepoUrl
     type: string
-  - name: imageTag
+  - name: env
+    type: string
+  - name: appName
     type: string
 
   workspaces:
@@ -36,7 +39,7 @@ spec:
     - name: revision
       value: $(params.branch-name)
 
-  - name: cat-readme
+  - name: version-builder
     runAfter: [ "fetch-repo" ]  # Wait until the clone is done before reading the readme.
     workspaces:
     - name: source
@@ -44,25 +47,14 @@ spec:
     taskSpec:
       workspaces:
       - name: source
-      steps:
-      - image: zshusers/zsh:4.3.15
-        script: |
-          #!/usr/bin/env zsh
-          cat $(workspaces.source.path)/README.md
-
-
-  - name: create-tag
-    runAfter: [ "fetch-repo" ]  # Wait until the clone is done before reading the readme.
-    workspaces:
-    - name: source
-      workspace: shared-data
-    taskSpec:
-      workspaces:
-      - name: source
+      results:
+      - name: version
+        description: version for rest of the process
       steps:
       - image: docker.io/python:3.9-buster
         script: |
           #!/usr/bin/env bash
+          set -ex
 
           cd $(workspaces.source.path)
           git config user.name "meson-bot"
@@ -75,10 +67,33 @@ spec:
           git checkout -b master
           git add VERSION
           git commit -m "Release version $(cat VERSION)"
+          cat VERSION | tr -d '\n' | tee $(results.version.path)
+
+  - name: echo
+    runAfter:
+    - version-builder
+    workspaces:
+    - name: source
+      workspace: shared-data
+    params:
+    - name: args
+      value: "$(params.dockerRepoUrl)/$(params.env)/$(params.appName):$(tasks.version-builder.results.version)"
+    taskSpec:
+      workspaces:
+      - name: source
+      params:
+      - name: args
+        type: string
+      steps:
+      - image: zshusers/zsh:4.3.15
+        script: |
+          #!/usr/bin/env zsh
+          #cat $(workspaces.source.path)/README.md
+          echo "$(params.args)"
 
   - name: go-build
     runAfter:
-    - create-tag
+    - version-builder
 
     # conditions:
     #   - conditionRef: "go-test"
@@ -108,8 +123,7 @@ spec:
     # - name: DOCKERFILE
     #   value: Dockerfile
     - name: IMAGE
-      value: $(params.imageUrl):$(params.imageTag)
-
+      value: "$(params.dockerRepoUrl)/$(params.env)/$(params.appName):$(tasks.version-builder.results.version)"
 
   - name: helm-push
     runAfter:
@@ -121,7 +135,10 @@ spec:
       name: helm-push
     params:
     - name: chartName
-      value: hello-go
+      value: $(params.appName)
+    - name: version
+      value: $(tasks.version-builder.results.version)
+
 
   - name: push-tag
     runAfter: [ "helm-push" ]  # Wait until the clone is done before reading the readme.
@@ -135,11 +152,11 @@ spec:
       - image: docker.io/python:3.9-buster
         script: |
           #!/usr/bin/env bash
+          set -ex
 
-          set -x
           cd $(workspaces.source.path)
-          # git config user.name "meson-bot"
-          # git config user.email "meson-bot@meson.ai"
+          git config user.name "meson-bot"
+          git config user.email "meson-bot@meson.ai"
           ssh-keyscan -H github.com >> $HOME/.ssh/known_hosts
           ls $HOME/.ssh/
           echo "Pushing detached tag of new version"
