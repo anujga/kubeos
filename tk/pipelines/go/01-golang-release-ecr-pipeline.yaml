@@ -125,9 +125,26 @@ spec:
     - name: IMAGE
       value: "$(params.dockerRepoUrl)/$(params.env)/$(params.appName):$(tasks.version-builder.results.version)"
 
-  - name: helm-push
+
+  - name: helm-replace-docker-tag
     runAfter:
     - docker-build-publish
+    workspaces:
+    - name: source
+      workspace: shared-data
+    taskRef:
+      name: helm-replace
+    params:
+    - name: chartName
+      value: $(params.appName)
+    - name: tagValue
+      value: $(tasks.version-builder.results.version)
+    - name: repoValue
+      value: "$(params.dockerRepoUrl)/$(params.env)/$(params.appName)"
+
+  - name: helm-push
+    runAfter:
+    - helm-replace-docker-tag
     workspaces:
     - name: source
       workspace: shared-data

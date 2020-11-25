@@ -8,3 +8,7 @@ v0.1
 - ACR support: https://github.com/GoogleContainerTools/kaniko/issues/1180
 - support persistent disk for faster builds. enable clean source task also
 - test framework to check artifacts exist
+
+v0.2
+- Deliberate using sha for docker tags
+- Multi arch builds. very relevant due to aws.graviton

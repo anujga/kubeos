@@ -1,0 +1,45 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: helm-replace
+  labels:
+    app.kubernetes.io/version: "0.1.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/tags: build-tool
+    tekton.dev/displayName: "helm-replace"
+spec:
+  description: >-
+    - helm replace. normally used to update docker tag in
+    values.yaml
+
+  params:
+  - name: chartName
+    description: name of chart. Assummed to be present in charts/chartName
+  - name: valuesFile
+    default: values.yaml
+  - name: tagPath
+    default: "image.tag"
+    description: yaml path of image tag
+  - name: repoPath
+    default: "image.repository"
+    description: yaml path of repository
+  - name: tagValue
+    description: value to replace path
+  - name: repoValue
+    description: value to replace path
+
+  workspaces:
+  - name: source
+
+  steps:
+  - image: anujgarg2004/buildhelpers:0.0.2
+    script: |
+      #!/usr/bin/env bash
+      set -ex
+
+      cd "$(workspaces.source.path)/charts/$(params.chartName)"
+
+      yq w -i $(params.valuesFile) $(params.tagPath) $(params.tagValue)
+      yq w -i $(params.valuesFile) $(params.repoPath) $(params.repoValue)
+      git add $(params.valuesFile)
